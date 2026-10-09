@@ -25,6 +25,7 @@
 #include "../campaign/ending/runtime.hpp"
 #include "../forearm_twist.hpp"
 #include "position_offset.hpp"
+#include "tracking_hold.hpp"
 #include "../trigger_discipline.hpp"
 #include "component/scene_skeletal_model.hpp"
 #include "../empty_hands_native.hpp"
@@ -33,6 +34,7 @@
 #include "../shoulder_anchors.hpp"
 #include "../weapon_interaction.hpp"
 #include "../weapon_recoil.hpp"
+#include "../weapon_feedback.hpp"
 #include "../weapon_render_pose.hpp"
 #include "../optic_runtime.hpp"
 #include "../weapon_profiles.hpp"
@@ -113,6 +115,8 @@ namespace vr::gameplay::hands
 			rig_binding binding;
 			rig_binding_cache binding_cache;
 			weapons::grip_presenter grip_presenter;
+			tracking_hold held_tracking;
+			vr::hand last_support{vr::hand::none};
 			trigger_discipline::controller trigger_finger;
 			float safe_index_weight{};
 			bool safe_index_applied{};
@@ -817,7 +821,7 @@ namespace vr::gameplay::hands
 				original();
 				return;
 			}
-			const auto input = controller_input::latest();
+			auto input = controller_input::latest();
 			head_pose_bridge::spatial_frame spatial{};
 			const auto now = controller_input::clock::now();
 			probe.input_sequence = input.sequence;
@@ -832,6 +836,7 @@ namespace vr::gameplay::hands
 				original();
 				return;
 			}
+			solver().held_tracking.apply(input);
 			probe.camera_age_ms =
 			    std::chrono::duration<double, std::milli>(now - spatial.captured_at).count();
 			rig layout{};
@@ -1286,6 +1291,10 @@ namespace vr::gameplay::hands
 					++skipped;
 					return;
 				}
+				// Confirm a new foregrip grasp in the hand that took it.
+				if (gameplay && probe.grip.support != solver().last_support && vr::valid_hand(probe.grip.support))
+					weapons::feedback::carry_confirmation(probe.grip.support, input);
+				solver().last_support = probe.grip.support;
 				if (gameplay && !selection_transition)
 					weapons::recoil::apply_to_pose(
 					    layout,

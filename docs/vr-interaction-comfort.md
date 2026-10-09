@@ -193,3 +193,27 @@ Regression retains the compact captured geometry, mirrored two-degree circles
 around both segments' antipodes, anatomical/world frame invariance, exact
 segment alignment and repeat-solve idempotence. Small movement must not wind
 an upper arm or elbow through a full turn.
+
+## Support grip continuity
+
+The OpenXR Grip and Trigger values latch with hysteresis: Grip presses at 0.55
+and releases below 0.30, Trigger presses at 0.55 and releases below 0.45. The
+SteamVR Touch binding uses the same Grip thresholds. A squeeze resting near one
+threshold therefore cannot chatter into press/release pairs that drop the
+foregrip.
+
+A held support has no positional breakaway; only Grip release lets go. It only
+steers the rifle axis while the tracked hand stays ahead of the rear wrist,
+though. When it collapses within 7 cm of the rear wrist, or swings more than
+about 125 degrees from the rear hand's one-hand axis, `grip_presenter` keeps the
+last two-hand aim rigid to the rear hand. Steering resumes over 150 ms once the
+hand is 10 cm away and within about 110 degrees again. The drawn support hand
+stays on the foregrip throughout. Acquisition and release blend with an eased
+140 ms curve. A new grasp sends the light carry-confirmation pulse to the
+supporting hand.
+
+The hand solver bridges per-hand pose dropouts of up to 250 ms with the last
+valid pose (`hands/tracking_hold.hpp`). Before this, an occluded support
+controller made the whole IK solve fall back to the native flat viewmodel for
+that frame. This bridge is presentation-only: carry ownership and grip edges
+still read the producer's own validity.

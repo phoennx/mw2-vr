@@ -753,6 +753,16 @@ int main()
 			"held Grip keeps M4 through coincident hands without undefined axis");
 		rifle_targets[0].position = add(rifle_targets[1].position,rotate(rifle_targets[1].rotation,span));
 		sample(true); check(present_rifle().support == hand::left, "M4 support survives crossing while squeezed");
+		for (int i=0;i<20;++i) { sample(true); result=present_rifle(); }
+		const auto ahead = rotate(output[8].rotation, unit(span));
+		rifle_targets[0].position = sub(rifle_targets[1].position,rotate(rifle_targets[1].rotation,span));
+		sample(true); result=present_rifle();
+		check(result.support == hand::left && dot(rotate(output[8].rotation,unit(span)),ahead) > .999f,
+			"support behind the rear wrist keeps the last rifle axis instead of flipping the gun");
+		rifle_targets[0].position = add(rifle_targets[1].position,rotate(rifle_targets[1].rotation,span));
+		for (int i=0;i<20;++i) { sample(true); result=present_rifle(); }
+		check(result.support == hand::left && dot(rotate(output[8].rotation,unit(span)),ahead) > .999f,
+			"support steering resumes once ahead of the rear wrist again");
 	}
 	std::cout << "weapon grip failures=" << failures << '\n';
 	return failures ? 1 : 0;

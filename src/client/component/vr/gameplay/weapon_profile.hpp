@@ -33,7 +33,7 @@ namespace vr::gameplay::weapons
 		// Receiver geometry and mechanical-family admission remain authored locally.
 		inline constexpr float acquire_meters = .10f;
 		inline constexpr float release_meters = .22f;
-		inline constexpr float blend_seconds = .10f;
+		inline constexpr float blend_seconds = .14f;
 	}
 	struct profile
 	{

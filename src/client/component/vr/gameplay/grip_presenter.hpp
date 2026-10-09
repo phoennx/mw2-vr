@@ -81,24 +81,27 @@ namespace vr::gameplay::weapons
 													profile.acquire_meters, now);
 			const auto support=authoritative_support ? (valid_hand(owner.support) && gameplay && offhand_available ? owner.support : hand::none) : proposed;
 			if (support != hand::none)
-				support_delta_ = normalize(multiply(conjugate(targets[rear].rotation), two_hand));
+				steer(profile, targets[rear], targets[other].position, authored_span, two_hand, units_per_meter, dt);
 			const float goal = support == hand::none ? 0.0f : 1.0f;
 			blend_ += std::clamp(goal - blend_, -dt / profile.blend_seconds, dt / profile.blend_seconds);
 			if (!gameplay || !offhand_available)
 				blend_ = 0;
+			// Ease both ends of the grasp: a linear ramp starts and stops the
+			// rifle's swing between one- and two-hand aim with a visible jolt.
+			const float eased = blend_ * blend_ * (3 - 2 * blend_);
 			if (blend_ > 0)
 			{
 				// Freeze the last relative support rotation on release. A free hand
 				// moving to reload must not keep steering during the return blend.
 				const auto retained_aim = multiply(targets[rear].rotation, support_delta_);
-				targets[rear].rotation = blend_quat(targets[rear].rotation, retained_aim, blend_);
+				targets[rear].rotation = blend_quat(targets[rear].rotation, retained_aim, eased);
 				const auto gun_position =
 					sub(solved[rig.arms[rear].wrist].position, rotate(targets[rear].rotation, offset));
 				const auto attached =
 					add(gun_position, rotate(targets[rear].rotation, profile.wrists[other].position));
 				targets[other].position =
-					add(targets[other].position, scale(sub(attached, targets[other].position), blend_));
-				targets[other].rotation = blend_quat(targets[other].rotation, targets[rear].rotation, blend_);
+					add(targets[other].position, scale(sub(attached, targets[other].position), eased));
+				targets[other].rotation = blend_quat(targets[other].rotation, targets[rear].rotation, eased);
 				if (!solve(rig, native, targets, shoulders, body_axis, rear, solved, limited, &offset,elbow))
 				{
 					reset();
@@ -107,26 +110,63 @@ namespace vr::gameplay::weapons
 			}
 			std::array<float, 2> amounts{};
 			amounts[rear] = 1;
-			amounts[other] = blend_;
+			amounts[other] = eased;
 			if (!apply_poses(rig, library, profile, targets, amounts, equip_animation, solved))
 			{
 				reset();
 				return {};
 			}
-			return {true, support, distance, blend_};
+			return {true, support, distance, eased};
 		}
 		void reset() noexcept
 		{
 			lease_.reset();
-			blend_ = 0;
-			support_delta_ = {0, 0, 0, 1};
+			blend_ = steer_ = 0;
+			steering_ = true;
+			support_delta_ = frozen_delta_ = {0, 0, 0, 1};
 			last_time_ = {};
 		}
 
 	  private:
+		// A held support never lets go on reach (Grip release only), but it can
+		// only define a rifle axis while it stays ahead of the rear wrist. When
+		// it collapses onto or crosses behind that wrist, keep the last aim rigid
+		// to the rear hand, then slide back once the axis is meaningful again.
+		void steer(const profile& profile, const hands::anchor& rear, hands::vec support, hands::vec authored_span,
+		           hands::quat two_hand, float units_per_meter, float dt) noexcept
+		{
+			using namespace hands;
+			const auto measured = normalize(multiply(conjugate(rear.rotation), two_hand));
+			if (profile.aiming == aim_rule::two_hand)
+			{
+				const auto delta = sub(support, rear.position);
+				const auto one_hand = rotate(rear.rotation, authored_span);
+				const float span = length(delta) / units_per_meter;
+				const float lengths = length(delta) * length(one_hand);
+				const float facing = std::isfinite(lengths) && lengths > 0 ? dot(delta, one_hand) / lengths : -1.0f;
+				if (steering_ ? span < .07f || facing < -.57f : span > .10f && facing > -.34f)
+					steering_ = !steering_;
+			}
+			else
+				steering_ = true;
+			if (blend_ <= 0)
+			{
+				support_delta_ = measured;
+				steer_ = steering_ ? 1.0f : 0.0f;
+			}
+			if (!steering_)
+			{
+				frozen_delta_ = support_delta_;
+				steer_ = 0;
+				return;
+			}
+			steer_ = std::min(1.0f, steer_ + dt / .15f);
+			support_delta_ = steer_ >= 1 ? measured : blend_quat(frozen_delta_, measured, steer_ * steer_ * (3 - 2 * steer_));
+		}
 		support_grip lease_;
-		float blend_{};
-		hands::quat support_delta_{0, 0, 0, 1};
+		float blend_{}, steer_{};
+		bool steering_{true};
+		hands::quat support_delta_{0, 0, 0, 1}, frozen_delta_{0, 0, 0, 1};
 		weapon_identity weapon_{};
 		std::uint64_t rear_revision_{}, assembly_{}, reference_{};
 		controller_input::clock::time_point last_time_{};
