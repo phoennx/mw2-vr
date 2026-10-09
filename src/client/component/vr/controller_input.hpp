@@ -39,6 +39,13 @@ namespace vr::controller_input
 			last_time_ = now;
 			return value_;
 		}
+		// Analog buttons latch with hysteresis: a squeeze resting near one
+		// threshold must not chatter into press/release pairs.
+		digital_action sample_analog(bool active, float value, float press, float release,
+			clock::time_point now) noexcept
+		{
+			return sample(active, value >= (value_.down ? release : press), now);
+		}
 
 	private:
 		digital_action value_{};

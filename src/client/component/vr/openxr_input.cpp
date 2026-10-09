@@ -291,8 +291,11 @@ namespace vr::openxr
 			const bool available = frame.focused && XR_SUCCEEDED(api) && value.isActive;
 			return state.sample(available, value.currentState, frame.sampled_at);
 		};
-		const auto analog_button =
-		    [&](XrAction action, controller_input::digital_sampler& state, input_channel channel)
+		const auto analog_button = [&](XrAction action,
+		                               controller_input::digital_sampler& state,
+		                               input_channel channel,
+		                               float press,
+		                               float release)
 		{
 			XrActionStateFloat value{XR_TYPE_ACTION_STATE_FLOAT};
 			const XrActionStateGetInfo get{XR_TYPE_ACTION_STATE_GET_INFO, nullptr, action, XR_NULL_PATH};
@@ -300,7 +303,7 @@ namespace vr::openxr
 			capture(channel, api, value.isActive, std::isfinite(value.currentState));
 			const bool available =
 			    frame.focused && XR_SUCCEEDED(api) && value.isActive && std::isfinite(value.currentState);
-			return state.sample(available, value.currentState >= .55f, frame.sampled_at);
+			return state.sample_analog(available, value.currentState, press, release, frame.sampled_at);
 		};
 		const auto axis = [&](XrAction action, std::array<float, 2>& output, input_channel channel)
 		{
@@ -357,9 +360,11 @@ namespace vr::openxr
 		{
 			auto& hand = hands_[h];
 			frame.trigger[h] =
-			    analog_button(hand.trigger, hand.trigger_state, hand_channel(input_channel::left_trigger, h));
-			frame.squeeze[h] =
-			    analog_button(hand.squeeze, hand.squeeze_state, hand_channel(input_channel::left_squeeze, h));
+			    analog_button(hand.trigger, hand.trigger_state, hand_channel(input_channel::left_trigger, h), .55f, .45f);
+			// Grip holds the barrel for long stretches; a wide release band keeps a
+			// relaxed squeeze (or Index force sensing) from dropping it.
+			frame.squeeze[h] = analog_button(
+			    hand.squeeze, hand.squeeze_state, hand_channel(input_channel::left_squeeze, h), .55f, .30f);
 			frame.trigger_touch[h] = boolean(hand.touch, hand.touch_state);
 			frame.primary[h] = boolean(hand.primary, hand.primary_state);
 			frame.secondary[h] = boolean(hand.secondary, hand.secondary_state);
