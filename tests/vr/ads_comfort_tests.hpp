@@ -121,6 +121,14 @@ namespace ads_comfort_tests
 			input=old;owner=old_owner;
 		}
 		check(read(1.f,false)==0,"mechanical interaction or gameplay suppression cancels comfort");
+		for(int i=0;i<10;++i){advance(40);(void)read();}
+		{
+			const float held=read();advance(20);const float easing=read(1.f,false);
+			check(held>.04f && easing<held && easing>0,"suppression eases the comfort offset out instead of snapping the gun");
+			advance(200);
+			check(read(1.f,false)==0,"suppression still settles comfort to zero within a quarter second");
+			movement.reset();
+		}
 		check(read(1.f,true,std::numeric_limits<float>::quiet_NaN())==0,"nonfinite clearance fails closed");
 		check(read(std::numeric_limits<float>::quiet_NaN())==0,"nonfinite angular alignment fails closed");
 		check(movement.update(input,owner,1,sight::scope,true,1.f,.2f,input.sampled_at+milliseconds(151))==0,

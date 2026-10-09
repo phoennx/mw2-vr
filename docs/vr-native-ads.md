@@ -124,8 +124,11 @@ The maximum approach preserves at least 8 cm of axial clearance (5 cm for therma
 the reviewed rear lens, or the rear native model bounds for optics without lens
 metadata. This is a comfort limit, not a measured optical eye box. Already-close
 optics receive no additional approach. Tracking/focus loss, firing-hand/weapon
-ownership changes, reference changes and mechanical interaction clear the old
-transition. Near-eye clearance still clamps immediately during a smooth return.
+ownership changes and reference changes clear the old transition. Suppression
+(mechanical interaction, weapon selection, gameplay pause, disabling the setting)
+instead returns the offset at 2 m/s, so a 15 cm optic offset settles in under
+100 ms without a single-frame jump. Near-eye clearance still clamps immediately
+during a smooth return.
 
 Classification uses the admitted assembled model, including reviewed color
 aliases, rather than the weapon name or available magnifier materials. Thermal
@@ -134,7 +137,7 @@ assistance through 50 cm and a smooth fade to zero at 70 cm. Its existing spring
 speed bound and two-hand ownership requirements also apply to the larger approach.
 `vr_adsComfort` defaults to `1` and controls this positional approach independently
 under launcher **Gameplay > Aiming > Near-eye sight attraction**. Setting it to `0`
-clears the approach transition and retains the unassisted weapon pose; automatic
+eases out the approach transition and retains the unassisted weapon pose; automatic
 ADS admission and lens magnification remain available. `vr_scopeZoom 0` disables
 only lens magnification; `vr_autoAds 0` also releases the approach. Only the
 existing projected weapon can own the ADS request.

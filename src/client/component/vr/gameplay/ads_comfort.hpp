@@ -114,11 +114,15 @@ namespace vr::gameplay::weapons::ads_comfort
 	{
 	public:
 		inline static constexpr float max_speed_meters_per_second=.25f;
+		// Suppression (mechanical contact, weapon switch) settles quickly but
+		// never in one frame: a 15 cm optic offset vanishing at once reads as
+		// the gun teleporting out of the hand.
+		inline static constexpr float suppressed_speed_meters_per_second=2.f;
 		void reset() noexcept {meters_=velocity_=0;seen_=false;}
 		float update(const controller_input::frame& input,const hold& owner,std::uint64_t assembly,
 			sight type,bool allowed,float alignment,float maximum,controller_input::clock::time_point now) noexcept
 		{
-			if(!allowed || !ads_alignment::tracked_hold(input,owner) || !input.focused || input.orientation_settling || !input.sequence ||
+			if(!ads_alignment::tracked_hold(input,owner) || !input.focused || input.orientation_settling || !input.sequence ||
 				now<input.sampled_at || now-input.sampled_at>std::chrono::milliseconds(150) ||
 				!std::isfinite(alignment) || !std::isfinite(maximum) || maximum<0 || distance(type)==0)
 			{reset();return 0;}
@@ -130,6 +134,12 @@ namespace vr::gameplay::weapons::ads_comfort
 			const float dt=seen_ ? std::clamp(std::chrono::duration<float>(input.sampled_at-at_).count(),0.f,.15f) : 0.f;
 			owner_=owner;assembly_=assembly;type_=type;reference_=input.reference_generation;
 			continuity_=input.continuity_generation;sequence_=input.sequence;at_=input.sampled_at;seen_=true;
+			if(!allowed)
+			{
+				velocity_=0;
+				meters_=std::clamp(meters_-suppressed_speed_meters_per_second*dt,0.f,maximum);
+				return meters_;
+			}
 			const float goal=ads_alignment::supported(input,owner) ?
 				std::clamp(alignment,0.f,1.f)*std::min(distance(type),maximum) : 0.f;
 			// Retain velocity as well as position when the alignment/ADS corridor
