@@ -21,7 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [RelWithDebInfo, Debug, Release]
+        # The phoennx fork only needs the playable Release package.
+        configuration: ${{ github.repository_owner == 'phoennx' && fromJSON('["Release"]') || fromJSON('["RelWithDebInfo","Debug","Release"]') }}
     steps:
       - name: Check out source and dependencies
         uses: actions/checkout@v4
