@@ -76,9 +76,9 @@ namespace vr::gameplay::weapons
 			float distance = length(sub(targets[other].position, anchor)) / units_per_meter;
 			if (profile.aiming == aim_rule::two_hand &&
 				length(sub(targets[other].position, targets[rear].position)) / units_per_meter < .08f)
-				distance = profile.release_meters + 1; // Coincident/crossing hands cannot define a stable rifle axis.
+				distance = profile.acquire_meters + 1; // Coincident/crossing hands cannot define a stable rifle axis.
 			const auto proposed = authoritative_support ? hand::none : lease_.consume(input, owner, assembly, gameplay && offhand_available, distance,
-													profile.acquire_meters, profile.release_meters, now);
+													profile.acquire_meters, now);
 			const auto support=authoritative_support ? (valid_hand(owner.support) && gameplay && offhand_available ? owner.support : hand::none) : proposed;
 			if (support != hand::none)
 				support_delta_ = normalize(multiply(conjugate(targets[rear].rotation), two_hand));

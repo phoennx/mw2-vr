@@ -7,18 +7,19 @@ namespace vr::gameplay::weapons
 {
 	// Bounded, runtime-independent support lease. Only a NEW squeeze near the
 	// anchor acquires it; holding squeeze while moving in must never auto-grab.
+	// Once engaged, only Grip release lets go: distance never breaks the grasp.
 	class support_grip
 	{
 	  public:
 		bool engaged() const noexcept { return engaged_; }
 		hand consume(const controller_input::frame& input, const hold& owner, std::uint64_t assembly,
-					 bool available, float distance_meters, float acquire, float release,
+					 bool available, float distance_meters, float acquire,
 					 controller_input::clock::time_point now) noexcept
 		{
 			if (!available || !owner.can_fire() || !input.focused || !input.sequence ||
 				now < input.sampled_at || now - input.sampled_at > std::chrono::milliseconds(150) ||
 				!std::isfinite(distance_meters) || distance_meters < 0 || !std::isfinite(acquire) ||
-				!std::isfinite(release) || acquire <= 0 || release <= acquire)
+				acquire <= 0)
 			{
 				reset();
 				return hand::none;
@@ -44,11 +45,6 @@ namespace vr::gameplay::weapons
 			{
 				engaged_ = false;
 				armed_ = true;
-			}
-			else if (engaged_ && distance_meters > release)
-			{
-				engaged_ = false;
-				armed_ = false;
 			}
 			else if (armed_ && pressed)
 			{

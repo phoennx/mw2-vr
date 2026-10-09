@@ -237,7 +237,7 @@ int main()
 	support_grip support;
 	std::uint64_t assembly = 1;
 	const auto consume = [&](float distance = 0.05f, bool available = true) {
-		return support.consume(input, owner, assembly, available, distance, 0.10f, 0.22f, now);
+		return support.consume(input, owner, assembly, available, distance, 0.10f, now);
 	};
 	sample(true);
 	check(consume() == hand::none, "initial held squeeze cannot grab");
@@ -247,8 +247,8 @@ int main()
 	check(consume() == hand::left, "near press acquires support");
 	check(consume() == hand::left, "same input cannot toggle grip");
 	check(consume(0.18f) == hand::left, "hysteresis retains attached support");
-	check(consume(0.23f) == hand::none, "overextension cancels");
-	check(consume() == hand::none, "return while held does not reacquire");
+	check(consume(1.0f) == hand::left, "held Grip retains support at any distance");
+	check(consume() == hand::left, "return while held stays attached");
 	sample(false);
 	(void)consume();
 	sample(true);
@@ -300,7 +300,7 @@ int main()
 	(void)consume();
 	sample(true);
 	(void)consume();
-	check(support.consume(input, owner, assembly, true, 0.05f, 0.1f, 0.22f,
+	check(support.consume(input, owner, assembly, true, 0.05f, 0.1f,
 						  now + std::chrono::milliseconds(151)) == hand::none,
 		  "stale frame rejected");
 	owner = holding.equipped(50);
@@ -748,9 +748,11 @@ int main()
 		rifle_targets[0].position = add(rifle_targets[1].position,rotate(rifle_targets[1].rotation,span));
 		sample(true); check(present_rifle().support == hand::left, "M4 reacquires before crossing test");
 		rifle_targets[0].position = rifle_targets[1].position;
-		sample(true); check(present_rifle().support == hand::none, "coincident hands release M4 without undefined axis");
+		sample(true); result=present_rifle();
+		check(result.support == hand::left && std::isfinite(length(rotate(output[8].rotation,{1,0,0}))),
+			"held Grip keeps M4 through coincident hands without undefined axis");
 		rifle_targets[0].position = add(rifle_targets[1].position,rotate(rifle_targets[1].rotation,span));
-		sample(true); check(present_rifle().support == hand::none, "M4 cannot auto regrab after crossing while squeezed");
+		sample(true); check(present_rifle().support == hand::left, "M4 support survives crossing while squeezed");
 	}
 	std::cout << "weapon grip failures=" << failures << '\n';
 	return failures ? 1 : 0;

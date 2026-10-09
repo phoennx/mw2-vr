@@ -193,10 +193,7 @@ namespace vr::gameplay::weapons::underbarrel
 	// squeeze state. Ownership commits remain in the server-owned carry adapter.
 	void settle_interactions(const hand_interaction::frame&,
 	                         const controller_input::frame& raw_input) noexcept;
-	bool ordinary_support_allowed(const carry::scene&,
-	                              const hands::anchor&,
-	                              hand,
-	                              bool retaining = false) noexcept;
+	bool ordinary_support_allowed(const carry::scene&, const hands::anchor&, hand) noexcept;
 	void suspend()noexcept;
 	bool blocks_native(const void* ps)noexcept;
 	bool prepare_carry_release(const hold&,

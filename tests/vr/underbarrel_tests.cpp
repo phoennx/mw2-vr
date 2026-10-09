@@ -276,10 +276,6 @@ int main()
 		check(u::choose_grip(pump,0,1,.09f,{.2f,.4f},.10f)==u::contact_role::action,"empty pump regrasp uses host support capture rather than a separate five centimetre sphere");
 		const auto tolerance=u::support_limits(u::kind::m203,.22f);
 		check(tolerance.retention==.22f && tolerance.step==u::limits(u::kind::m203).step,"support adopts host breakaway while retaining tracking discontinuity protection");
-		const vr::gameplay::hands::vec rest{.32108486f,.09792749f,.00464360f};const float span=vr::gameplay::hands::length(rest);
-		check(u::retained_support_span(rest,.27769533f,.28f,.22f,tolerance.step),"recorded SCAR closure span retains loaded support after mechanical-to-support handoff");
-		check(u::retained_support_span(rest,span+.20f,span+.19f,.22f,tolerance.step) && !u::retained_support_span(rest,span+.23f,span+.22f,.22f,tolerance.step),"legacy support hysteresis retains twenty centimetres and releases beyond twenty-two");
-		check(!u::retained_support_span(rest,span,span+.4f,.22f,tolerance.step) && !u::retained_support_span(rest,.02f,.1f,.22f,tolerance.step),"jumps and coincident hands cannot retain support");
 		for(int hand:{0,1})for(int degrees=-180;degrees<=180;degrees+=15)
 		{
 			const float angle=degrees*.0174532925199433f;
@@ -287,10 +283,7 @@ int main()
 			const auto scores=u::controller_facing(rotation,hand);
 			check((u::choose_grip(loaded,0,1,.09f,scores,.10f)==u::contact_role::support)==(scores.support>=.258819f),
 				"both hands use the same broad support angle across the full wrist-roll range");
-			check(u::support_facing(scores,true) && u::retained_support_span(rest,span+.20f,span+.19f,.22f,tolerance.step),
-				"held M203 support tolerates full wrist roll inside the host foregrip breakaway region");
-			check(!u::retained_support_span(rest,span+.23f,span+.22f,.22f,tolerance.step),
-				"wrist freedom cannot retain M203 beyond the host foregrip breakaway distance");
+			check(u::support_facing(scores,true),"held M203 support tolerates full wrist roll");
 		}
 		auto cycle=empty;
 		for(auto operation:{u::operation::open,u::operation::draw,u::operation::insert,u::operation::close})
@@ -298,7 +291,7 @@ int main()
 			const auto tx=u::plan(cycle,{operation,id,cycle.revision,vr::hand::right,vr::hand::left});
 			check(bool(tx),"SCAR open/draw/insert/close cycle remains admitted");if(tx)cycle=tx.next;
 		}
-		check(cycle.chamber && !cycle.open && u::retained_support_span(rest,.27769533f,.28f,.22f,tolerance.step) &&
+		check(cycle.chamber && !cycle.open &&
 			u::choose_grip(cycle,0,1,.09f,{.66867f,.69105f},.10f)==u::contact_role::support,
 			"loaded closure retains support and permits regrasp at the recorded left-hand orientation");
 		const auto gp=u::import_native({{61,4},62,u::kind::gp25},1,3);

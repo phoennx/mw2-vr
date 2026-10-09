@@ -20,9 +20,8 @@ namespace vr::gameplay::weapons::underbarrel
 	inline bool support_facing(palm_facing p,bool retaining=false,kind type=kind::m203)noexcept
 	{
 		if(!std::isfinite(p.support) || !std::isfinite(p.firing) || std::abs(p.support)>1.001f || std::abs(p.firing)>1.001f)return false;
-		// Once acquired, M203 support uses the host foregrip's positional
-		// breakaway. Turning a held wrist cannot switch it to a firing grasp or
-		// drop it; that role requires release and a fresh directional acquisition.
+		// Turning a held M203 wrist cannot switch it to a firing grasp; that role
+		// requires release and a fresh directional acquisition.
 		if(retaining && type==kind::m203)
 			return p.support*p.support+p.firing*p.firing<=1.002f; // Orthogonal unit-palm projections; rejects invalid facing's {-1,-1} sentinel.
 		// Shotgun support also accepts an inward palm at its existing angle.
@@ -32,7 +31,7 @@ namespace vr::gameplay::weapons::underbarrel
 	{return p.firing>=(retaining?.642788f:.766045f) && p.firing>p.support+.12f;}
 	inline constexpr float firing_acquire=.075f,firing_release=.095f;
 	// Support keeps authored distances with a broad 75-degree palm-up gate.
-	// M203 retention follows ordinary foregrip breakaway; firing stays directional.
+	// Held support is retained until Grip release; firing stays directional.
 	// Clear firing intent excludes support only inside the firing contact.
 	inline bool support_intent(float fire_distance,palm_facing palm,kind type=kind::m203)noexcept
 	{return support_facing(palm,false,type) && !(fire_distance>=0 && fire_distance<=firing_acquire && firing_facing(palm));}
@@ -46,13 +45,6 @@ namespace vr::gameplay::weapons::underbarrel
 		if(std::isfinite(release_radius) && release_radius>0 && release_radius<=.5f)
 		{result.retention=std::max(result.retention,release_radius);result.lateral=std::max(result.lateral,release_radius);}
 		return result;
-	}
-	inline bool retained_support_span(hands::vec rest,float distance,float previous,float release_radius,float max_step)noexcept
-	{
-		const float expected=hands::length(rest);
-		return std::isfinite(expected) && std::isfinite(distance) && std::isfinite(previous) &&
-			std::isfinite(release_radius) && release_radius>0 && std::isfinite(max_step) && max_step>0 &&
-			distance>=.08f && std::abs(distance-expected)<=release_radius && std::abs(distance-previous)<=max_step;
 	}
 	struct stroke_result {bool valid{};float travel{};};
 	inline stroke_result project_stroke(hands::vec start,hands::vec previous,hands::vec current,hands::vec axis,float initial,float stroke,part_limits tolerance=limits(kind::m203))noexcept

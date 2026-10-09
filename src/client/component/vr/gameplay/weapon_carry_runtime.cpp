@@ -956,26 +956,8 @@ namespace vr::gameplay::weapons::carry
 				record_release(r.action, detail.c_str());
 				complete(r, last);
 			}
-			bool ordinary_released{};
-			for (const auto& v : owned.instances())
-				if (v.at == location::held && v.owner.can_fire() && valid_hand(v.owner.support))
-				{
-					if (underbarrel::current(v.id).owns_support)
-						continue;
-					const auto held_pose = pose(v, wrists, input, valid_hands);
-					const int off = int(v.owner.support);
-					if (!underbarrel::ordinary_support_allowed(held_pose, wrists[off], v.owner.support, true))
-					{
-						const auto result = owned.release(
-						    v.id, 1u << off, location::absent, false, [](const instance&) { return false; });
-						ordinary_released = result.action == outcome::support_released || ordinary_released;
-					}
-				}
-			if (ordinary_released)
-			{
-				publish();
-				invalidate_muzzle();
-			}
+			// Held support has no positional breakaway: only a Grip release (above)
+			// lets go of the foregrip, however far the tracked hand drifts.
 			std::array<scene, inventory::capacity> attachment_scenes{};
 			for (size_t i = 0; i < owned.instances().size(); ++i)
 				if (owned.instances()[i].at == location::held)

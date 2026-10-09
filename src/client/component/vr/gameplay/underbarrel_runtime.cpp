@@ -306,8 +306,7 @@ namespace vr::gameplay::weapons::underbarrel
 				runtime.view.grip = lease::none;
 			if (runtime.view.grip == lease::support && contact.type == kind::gp25)
 			{
-				if (!grip_down || !hand_available ||
-				    contact.action_distance > std::max(support_tolerance.retention, contact.support_radius))
+				if (!grip_down || !hand_available)
 					runtime.view.grip = lease::none;
 			}
 			if (runtime.view.grip == lease::support && contact.type != kind::gp25)
@@ -321,23 +320,16 @@ namespace vr::gameplay::weapons::underbarrel
 				                                                    contact.stroke,
 				                                                    support_tolerance.retention,
 				                                                    support_tolerance.step);
-				const bool retained =
-				    contact.type == kind::m203
-				        ? (runtime.view.ammo.chamber ? retained_support_span(contact.rest_span,
-				                                                             contact.hand_distance,
-				                                                             runtime.previous_distance,
-				                                                             contact.support_release,
-				                                                             support_tolerance.step)
-				                                     : shared.valid)
-				        : contact.action_retention_distance <= support_tolerance.retention;
-				if (!grip_down || !hand_available || !retained ||
-				    !support_facing(orientation, true, contact.type))
+				// Held Grip keeps support at any distance or wrist angle. Reach only
+				// decides whether the retained grasp may drive the empty action.
+				if (!grip_down || !hand_available)
 					runtime.view.grip = lease::none;
 				else if (!runtime.view.ammo.chamber &&
 				         (contact.type == kind::m203
-				              ? shared.travel > .006f
-				              : hands::dot(hands::sub(contact.stroke_hand, runtime.start), contact.axis) >
-				                    .003f))
+				              ? shared.valid && shared.travel > .006f
+				              : contact.action_retention_distance <= support_tolerance.retention &&
+				                    hands::dot(hands::sub(contact.stroke_hand, runtime.start), contact.axis) >
+				                        .003f))
 					runtime.view.grip = runtime.view.support_role =
 					    lease::action; // Empty action can reopen with the retained grasp.
 				else
@@ -668,22 +660,12 @@ namespace vr::gameplay::weapons::underbarrel
 		std::uint32_t token{},flags{};std::memcpy(&token,static_cast<const std::byte*>(ps)+0x3bc,4);std::memcpy(&flags,static_cast<const std::byte*>(ps)+0x3c0,4);
 		return flags&0x4000 && current(carry::native_identity(token)).active;
 	}
-	bool ordinary_support_allowed(const carry::scene& weapon,const hands::anchor& wrist,hand actor,bool retaining)noexcept
+	bool ordinary_support_allowed(const carry::scene& weapon,const hands::anchor& wrist,hand actor)noexcept
 	{
 		if(!enabled() || !valid_hand(actor))return true;
 		scene s;{const std::lock_guard lock(publication);const auto* cached=scenes.find(weapon.owner.id());if(!cached)return true;s=*cached;}
 		if(!directional_grips(s.type))return true;
 		if(s.assembly!=weapon.assembly)return true; // Old attachment policy cannot restrict a different rig.
-		if(retaining)
-		{
-			// Same solved two-hand anchor and authored positional hysteresis as
-			// the original presenter, plus the broader retained palm gate.
-			if(!weapon.authored || !std::isfinite(s.units) || s.units<=0)return false;
-			const auto point=hands::pose_math::compose(weapon.gun,weapon.supports[int(actor)]).position;
-			const auto q=hands::multiply(hands::conjugate(weapon.gun.rotation),wrist.rotation);
-			return hands::length(hands::sub(wrist.position,point))/s.units<=weapon.authored->release_meters &&
-				support_facing(controller_facing(q,int(actor)),true,s.type);
-		}
 		const auto module=current(weapon.owner.id());
 		if(module.active && (module.ammo.open || module.travel>.001f))return false; // Moving barrel/pump owns the real shifted contact.
 		const auto q=hands::multiply(hands::conjugate(weapon.gun.rotation),wrist.rotation);

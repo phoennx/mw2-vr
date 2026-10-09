@@ -13,7 +13,7 @@ template<class Check> void slow_simulation_input_tests(Check check)
 	trigger_policy fire;hold owner{49,1,hand::right,hand::none,hold_source::engine_default,1};
 	check(!fire.consume(f,owner,true,true,start),"slow-simulation firing first arms on neutral");
 	vr::gameplay::hand_interaction::input_history gestures;gestures.update(f,true,start);
-	support_grip support;support.consume(f,owner,1,true,.01f,.1f,.2f,start);
+	support_grip support;support.consume(f,owner,1,true,.01f,.1f,start);
 	for(int tick=1;tick<=60;++tick)
 	{
 		auto next=f;next.sequence++;next.sampled_at=start+std::chrono::milliseconds(tick*10);
@@ -22,7 +22,7 @@ template<class Check> void slow_simulation_input_tests(Check check)
 		if(tick%20==0)
 		{
 			check(fire.consume(f,owner,true,true,f.sampled_at),"fresh held trigger survives 200ms simulation cadence");
-			check(support.consume(f,owner,1,true,.01f,.1f,.2f,f.sampled_at)==hand::left,"support hand acquires and retains its grip at slow cadence");
+			check(support.consume(f,owner,1,true,.01f,.1f,f.sampled_at)==hand::left,"support hand acquires and retains its grip at slow cadence");
 			gestures.update(f,true,f.sampled_at);
 			const auto grip=gestures.get(hand::left,vr::gameplay::hand_interaction::button::grip);
 			check(grip.armed && grip.down && (tick!=20 || grip.press),"slow server retains grip intent and its new-press edge");

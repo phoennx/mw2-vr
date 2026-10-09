@@ -1242,17 +1242,18 @@ namespace vr::gameplay::hands
 					    if (module_grip.active && !module_grip.owns_support &&
 					        (module_grip.ammo.open || module_grip.travel > .001f))
 						    return false;
+					    // A held support stays attached at any wrist angle until Grip release.
 					    if (weapons::underbarrel::enabled() &&
 					        weapons::underbarrel::directional_grips(
 					            solver().binding.underbarrel_parts.type) &&
-					        !module_grip.owns_support)
+					        !module_grip.owns_support && owner.support != other)
 					    {
 						    const int off = int(other);
 						    const auto wrist =
 						        multiply(conjugate(targets[int(owner.rear)].rotation), targets[off].rotation);
 						    if (!weapons::underbarrel::support_facing(
 						            weapons::underbarrel::controller_facing(wrist, off),
-						            owner.support == other,
+						            false,
 						            solver().binding.underbarrel_parts.type))
 							    return false;
 					    }
