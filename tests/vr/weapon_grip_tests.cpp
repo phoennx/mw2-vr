@@ -763,6 +763,32 @@ int main()
 		for (int i=0;i<20;++i) { sample(true); result=present_rifle(); }
 		check(result.support == hand::left && dot(rotate(output[8].rotation,unit(span)),ahead) > .999f,
 			"support steering resumes once ahead of the rear wrist again");
+		{
+			// Two-hand swing pivots about the real rear hand (controller grip), not
+			// the calibrated wrist lever behind it.
+			grip_presenter pivoted;
+			owner = holding.equipped(53);
+			auto t = rifle_targets;
+			t[1].rotation = {0,0,0,1};
+			t[0].position = add(t[1].position, span);
+			const std::array<vec,2> palms{t[0].position, add(t[1].position, vec{4,0,-3})};
+			const auto run = [&] {
+				return pivoted.update(m4::foregrip, m4_library, rig, rifle_native, t, rifle_shoulders, axes, input,
+					owner, assembly, 39.37007874f, true, false, now, output, limited, true, false, &palms);
+			};
+			sample(false); (void)run();
+			sample(true); check(run().support == hand::left, "pivoted M4 acquires support");
+			for (int i=0;i<20;++i) { sample(true); result=run(); }
+			const auto level = output[8];
+			const auto local = rotate(conjugate(level.rotation), sub(palms[1], level.position));
+			const float half = .17f;
+			t[0].position = add(t[1].position, rotate(quat{0,std::sin(half),0,std::cos(half)}, span));
+			for (int i=0;i<20;++i) { sample(true); result=run(); }
+			check(close(add(output[8].position, rotate(output[8].rotation, local)), palms[1]),
+				"two-hand swing keeps the gun fixed at the real rear hand");
+			check(!close(rotate(output[8].rotation,{1,0,0}), rotate(level.rotation,{1,0,0})),
+				"pivoted support still steers the rifle axis");
+		}
 	}
 	std::cout << "weapon grip failures=" << failures << '\n';
 	return failures ? 1 : 0;

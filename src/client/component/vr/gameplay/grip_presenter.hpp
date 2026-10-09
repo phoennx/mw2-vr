@@ -21,7 +21,7 @@ namespace vr::gameplay::weapons
 						   const hold& owner, std::uint64_t assembly, float units_per_meter, bool gameplay,
 						   bool equip_animation, controller_input::clock::time_point now,
 						   std::span<hands::bone> solved, std::array<bool, 2>& limited, bool offhand_available = true,
-						   bool authoritative_support = false) noexcept
+						   bool authoritative_support = false, const std::array<hands::vec, 2>* palms = nullptr) noexcept
 		{
 			using namespace hands;
 			offhand_available=offhand_available && profile.support_enabled;
@@ -93,10 +93,22 @@ namespace vr::gameplay::weapons
 			{
 				// Freeze the last relative support rotation on release. A free hand
 				// moving to reload must not keep steering during the return blend.
+				const auto one_hand = targets[rear].rotation;
 				const auto retained_aim = multiply(targets[rear].rotation, support_delta_);
 				targets[rear].rotation = blend_quat(targets[rear].rotation, retained_aim, eased);
-				const auto gun_position =
-					sub(solved[rig.arms[rear].wrist].position, rotate(targets[rear].rotation, offset));
+				auto wrist = solved[rig.arms[rear].wrist].position;
+				if (palms)
+				{
+					// Swing about the real rear hand (controller grip), as other VR
+					// shooters do. The calibrated wrist sits a lever away from the
+					// palm; pivoting there pulls the grip out of the hand like a stock.
+					const auto pivot = (*palms)[rear];
+					const auto swing = normalize(multiply(targets[rear].rotation, conjugate(one_hand)));
+					const auto moved = add(pivot, rotate(swing, sub(targets[rear].position, pivot)));
+					wrist = add(wrist, sub(moved, targets[rear].position));
+					targets[rear].position = moved;
+				}
+				const auto gun_position = sub(wrist, rotate(targets[rear].rotation, offset));
 				const auto attached =
 					add(gun_position, rotate(targets[rear].rotation, profile.wrists[other].position));
 				targets[other].position =

@@ -208,7 +208,13 @@ though. When it collapses within 7 cm of the rear wrist, or swings more than
 about 125 degrees from the rear hand's one-hand axis, `grip_presenter` keeps the
 last two-hand aim rigid to the rear hand. Steering resumes over 150 ms once the
 hand is 10 cm away and within about 110 degrees again. The drawn support hand
-stays on the foregrip throughout. Acquisition and release blend with an eased
+stays on the foregrip throughout.
+
+Two-hand steering swings the rifle about the rear controller's grip origin (the
+real palm), not about the calibrated wrist point. A Quest 3 calibration puts that
+wrist about 15 cm from the controller. Pivoting there pulled the grip out of the
+rear hand as the support hand steered, which read like a virtual stock. The
+server-side carry pose used for contacts and drops still pivots at the wrist. Acquisition and release blend with an eased
 140 ms curve. A new grasp sends the light carry-confirmation pulse to the
 supporting hand.
 

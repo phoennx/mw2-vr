@@ -847,6 +847,7 @@ namespace vr::gameplay::hands
 				return;
 			}
 			std::array<anchor, 2> targets{};
+			std::array<vec, 2> palms{};
 			if (!empty && !independent && weapons::carry::active() &&
 			    !matches_weapon_model(*object, layout, owner.weapon))
 			{
@@ -910,6 +911,7 @@ namespace vr::gameplay::hands
 					{
 						targets[hand] = {add(shoulders[hand], vec{0, 0, -.35f * spatial.units_per_meter}),
 						                 {0, 0, 0, 1}};
+						palms[hand] = targets[hand].position;
 						probe.target[hand] = targets[hand].position;
 						continue;
 					}
@@ -925,6 +927,10 @@ namespace vr::gameplay::hands
 					original();
 					return;
 				}
+				anchor palm{};
+				palms[hand] = tracked_wrist(input, spatial, view_offset, hand, {0.f, 0.f, 0.f}, palm)
+				                  ? palm.position
+				                  : targets[hand].position;
 				probe.target[hand] = targets[hand].position;
 			}
 			// Native callers request partial bones (muzzle queries, rendering, etc.).
@@ -1284,7 +1290,8 @@ namespace vr::gameplay::hands
 						        input, owner, revolver.ammo.loader_hand != vr::hand::none);
 					    return weapons::physical_reload::support_available(input, owner);
 				    }(),
-				    weapons::carry::active());
+				    weapons::carry::active(),
+				    &palms);
 				if (!probe.grip.valid)
 				{
 					reason = "profile grip/pose contract rejected";
