@@ -142,6 +142,9 @@ UpgradeLog*.htm
 *.mdf
 *.ldf
 
+### JetBrains
+.idea/
+
 ### IDA
 *.id0
 *.id1
