@@ -183,9 +183,20 @@ int main()
 	check(!smooth.consume(input, true, 0.2f, {}, later).active, "switch back to smooth requires neutral");
 	input.turn = {};
 	(void)smooth.consume(input, true, 0.2f, {}, later);
+	{
+		const auto stalled = later + std::chrono::milliseconds(400);
+		input.sampled_at = stalled;
+		input.move = {0, 1};
+		input.turn = {1, 0};
+		const auto resumed = smooth.consume(input, true, 0.2f, {}, stalled);
+		check(resumed.active && resumed.forward > .99f && resumed.yaw_delta == 0,
+			"command stall keeps walking without integrating the stalled turn");
+		input.move = input.turn = {};
+		input.sampled_at = later;
+	}
 	input.turn = {1, 0};
 	input.sampled_at = now + std::chrono::seconds(1);
-	check(!smooth.consume(input, true, 0.2f, {}, input.sampled_at).active,
+	check(smooth.consume(input, true, 0.2f, {}, input.sampled_at).yaw_delta == 0,
 		"long command gap cannot catch up rotation");
 	input.turn = {};
 	(void)smooth.consume(input, true, 0.2f, {}, input.sampled_at);

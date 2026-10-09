@@ -53,15 +53,17 @@ namespace vr::controller_input
 				return result;
 			}
 			if (generation_ != input.reference_generation || input.sequence < sequence_ ||
-				mode_ != turning.mode || (armed_ && (now < last_consumed_ ||
-					now - last_consumed_ > std::chrono::milliseconds(150))))
+				mode_ != turning.mode)
 			{
 				reset();
 				generation_ = input.reference_generation;
 			}
 			mode_ = turning.mode;
-			const auto elapsed = armed_ ? std::clamp(std::chrono::duration<float>(now - last_consumed_).count(),
-				0.0f, 0.05f) : 0.0f;
+			// A slow command frame (load hitch) is not a focus loss: keep walking
+			// without demanding neutral sticks, but never integrate the stall.
+			const bool stalled = now < last_consumed_ || now - last_consumed_ > std::chrono::milliseconds(150);
+			const auto elapsed = armed_ && !stalled ?
+				std::clamp(std::chrono::duration<float>(now - last_consumed_).count(), 0.0f, 0.05f) : 0.0f;
 			last_consumed_ = now;
 			sequence_ = input.sequence;
 			const auto magnitude = std::hypot(input.move[0], input.move[1]);
