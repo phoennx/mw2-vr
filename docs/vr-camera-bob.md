@@ -1,6 +1,6 @@
 # VR movement camera bob
 
-`vr_cameraBob` is a saved boolean, enabled by default. The launcher exposes it
+`vr_cameraBob` is a saved boolean, disabled by default for comfort. The launcher exposes it
 under **VR Settings > Basics > Visual comfort** in English and Simplified Chinese.
 It controls horizontal and vertical native movement bob for the local VR camera,
 including firearms, empty hands and the body-mounted tactical knife. Console

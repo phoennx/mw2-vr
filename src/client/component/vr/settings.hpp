@@ -123,7 +123,7 @@ namespace vr::settings
 		                              disable_dog_pounce,
 		                              ads_comfort,
 		                              boolean_setting{disable_lens_flare, false},
-		                              boolean_setting{camera_bob, true},
+		                              boolean_setting{camera_bob, false},
 		                              boolean_setting{recoil, true},
 		                              boolean_setting{stabilization_toggles[0], false},
 		                              boolean_setting{stabilization_toggles[1], false},

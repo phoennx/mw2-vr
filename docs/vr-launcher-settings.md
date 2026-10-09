@@ -272,7 +272,7 @@ and regression tests.
 | Invisibility mode | `vr_cheatNotarget` | `off` | `off`, `on` |
 | Infinite ammo mode | `vr_cheatAmmo` | `off` | `off`, `reserve`, `infinite` |
 | Disable lens flares in VR | `vr_disableLensFlare` | false | boolean |
-| Movement camera bob | `vr_cameraBob` | true | boolean |
+| Movement camera bob | `vr_cameraBob` | false | boolean |
 | Live stream preview mode | `vr_recordingMode` | false | boolean |
 | Preview exterior dimming | `vr_recordingDim` | 65% | 0–100%, step 1 |
 | Detailed view diagnostics | `vr_debugViewProbes` | false | boolean; restart required |

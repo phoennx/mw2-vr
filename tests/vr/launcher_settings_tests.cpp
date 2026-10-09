@@ -265,7 +265,7 @@ int main(int argc, char** argv)
 		require(debug_selection(json{{vr::debug_options::names[0], "true"}}) ==
 			vr::debug_options::selection{}, "Runtime probe selection rejects string booleans");
 		require(initial.dump().size() < max_payload_bytes, "Complete settings fit the bounded bridge payload");
-		require(initial[vr::settings::camera_bob] == true, "Movement camera bob defaults on");
+		require(initial[vr::settings::camera_bob] == false, "Movement camera bob defaults off for comfort");
 		require(initial[vr::settings::recording_mode.name] == false, "Recording guide defaults off in launcher and runtime");
 		require(initial[vr::settings::recording_dim.name] == 65, "Recording exterior defaults to stronger 65 percent dimming");
 		for (const double strength : {0.,65.,100.})
@@ -295,8 +295,8 @@ int main(int argc, char** argv)
 			auto bad=initial;bad[vr::settings::recoil_penalty]=invalid;
 			require(!validate(bad), "Unknown recoil penalty modes are rejected");
 		}
-		require(read_values("seta VR_CAMERABOB 0\n")[vr::settings::camera_bob] == false,
-			"Console camera bob disable loads case-insensitively");
+		require(read_values("seta VR_CAMERABOB 1\n")[vr::settings::camera_bob] == true,
+			"Console camera bob enable loads case-insensitively");
 		require(read_values("seta vr_cameraBob invalid\n") == initial, "Malformed camera bob keeps defaults");
 		for (const auto& toggle : vr::settings::toggles)
 		{
@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 		auto changed = initial;
 		changed[vr::settings::turn_mode] = "snap";
 		changed[vr::settings::disable_lens_flare] = true;
-		changed[vr::settings::camera_bob] = false;
+		changed[vr::settings::camera_bob] = true;
 		changed[vr::settings::recoil] = false;
 		changed[vr::settings::recoil_penalty] = "all";
 		changed[vr::settings::hand_up.name] = -.125;
