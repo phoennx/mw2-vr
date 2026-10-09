@@ -45,7 +45,9 @@ namespace scripting::lua::engine
 
 	void start()
 	{
-		get_scripts().clear();
+		// start() can run without a preceding stop() (save load, then client
+		// spawn). Drop native callbacks before their Lua states are closed.
+		stop();
 
 		load_generic_script();
 
